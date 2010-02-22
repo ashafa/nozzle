@@ -34,10 +34,6 @@ h1. Nozzle
 
 Nozzle is a "Clojure":http://clojure.org library for streaming statuses from the "Twitter Streaming API":http://apiwiki.twitter.com/Streaming-API-Documentation . Nozzle tries to abide by the guidelines for connecting/reconnecting to the streaming api on HTTP/Network error, or intentionally disconnecting and reconnecting. Nozzle is also capable of changing methods and query parameters while streaming with practically no loss of data.
 
-h2. Live Demo
-
-Here is a "live demostration":http://ashafa.com/nozzle/demo showing "tweets per second" for the terms "love" and "hate" using Nozzle and Clutch. (Next run @ 12:05PM EST. February 22 2010).
-
 h2. Using Nozzle
 
 It is more fun to use Nozzle interactively in your REPL. Start by creating a nozzle to track the word 'love' and print the resulting data to \*out\*:
