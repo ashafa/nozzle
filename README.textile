@@ -40,7 +40,7 @@ Here is a "live demostration":http://ashafa.com/nozzle/demo showing "tweets per 
 
 h2. Using Nozzle
 
-It is more fun to use Nozzle interactively in your REPL. Start by creating a nozzle to track the word 'love' and print the resulting data to *out*:
+It is more fun to use Nozzle interactively in your REPL. Start by creating a nozzle to track the word 'love' and print the resulting data to \*out\*:
 
 <pre>
 nozzle-example> (nozzle/create-nozzle "filter" "nozzle_tester" "AwRoNgPaSsWoRd" println {:track "love"})
@@ -48,7 +48,7 @@ nozzle-example> (nozzle/create-nozzle "filter" "nozzle_tester" "AwRoNgPaSsWoRd" 
 {:nozzle-id "nozzle_tester", :stream-method "filter"}
 </pre>
 
-Yay! That was easy. The function 'create-nozzle' takes five arguments (the fifth argument is optional). The arguments are (i) the "method":http://apiwiki.twitter.com/Streaming-API-Documentation#Methods you wish to connect to the streaming api, (ii) a valid screen name of a twitter user, (iii) the password for that user, (iv) a callback function that takes one argument which is a line of data (status, notice, or newline character) as it is read from the connection, (v) and an optional map which translates to the query parameters for the connection method, respectively. It then returns a map containing the nozzle id (which is the same as the twitter screen name used for the connection) and the stream method of the connection. Now check your *out* to view the statuses streaming from the twittersphere... Hmm?!? no statuses are showing up! Let's check the status of our nozzle ...
+Yay! That was easy. The function 'create-nozzle' takes five arguments (the fifth argument is optional). The arguments are (i) the "method":http://apiwiki.twitter.com/Streaming-API-Documentation#Methods you wish to connect to the streaming api, (ii) a valid screen name of a twitter user, (iii) the password for that user, (iv) a callback function that takes one argument which is a line of data (status, notice, or newline character) as it is read from the connection, (v) and an optional map which translates to the query parameters for the connection method, respectively. It then returns a map containing the nozzle id (which is the same as the twitter screen name used for the connection) and the stream method of the connection. Now check your \*out\* buffer to view the statuses streaming from the twittersphere... Hmm?!? no statuses are showing up! Let's check the status of our nozzle ...
 
 <pre>
 nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")

@@ -5,11 +5,11 @@
   <artifactId>nozzle</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <name>nozzle</name>
-  <description>A Clojure library to connect to twitters streaming API.</description>
+  <description>A Clojure library for streaming stauses from the Twitter Streaming API.</description>
   <scm>
     <connection>scm:git:git://github.com/tashafa/nozzle.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/tashafa/nozzle.git</developerConnection>
-    <tag>6c97b9d2042146aea983e3a9c7df8cabf0a67ca3</tag>
+    <tag>862911457bde86fe12f09589315750241146d333</tag>
     <url>http://github.com/tashafa/nozzle</url>
   </scm>
   <repositories>
