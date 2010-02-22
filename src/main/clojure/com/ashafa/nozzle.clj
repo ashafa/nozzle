@@ -85,7 +85,7 @@
           (recur (rest lines)))))))
 
 (defn- get-http-agent
-  "Returns an HTTP agent set up with a connection to twitters streaming api."
+  "Returns an HTTP agent set up with a connection to the twitter streaming api."
   [hose-id nozzle-id]
   (let [nozzle        (@nozzles nozzle-id)
         stream-method (nozzle :stream-method)
