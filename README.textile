@@ -28,11 +28,15 @@ h1. Nozzle
   []
   (if (nozzle/get-nozzle-status (auth :id))
     (nozzle/open-nozzle (auth :id))
-    (nozzle/create-nozzle "filter" (auth :id) (auth :pass) save-to-couchdb {:track "clojure"})))
+    (nozzle/create-nozzle "filter" (auth :id) (auth :pass) save-to-couchdb {:track "love,hate"})))
 
 </pre>
 
 Nozzle is a "Clojure":http://clojure.org library for streaming statuses from the "Twitter Streaming API":http://apiwiki.twitter.com/Streaming-API-Documentation . Nozzle tries to abide by the guidelines for connecting/reconnecting to the streaming api on HTTP/Network error, or intentionally disconnecting and reconnecting. Nozzle is also capable of changing methods and query parameters while streaming with practically no loss of data.
+
+h2. Live Demo
+
+Here is a "live demostration":http://ashafa.com/nozzle/demo showing "tweets per second" for the terms "love" and "hate" using Nozzle and Clutch. (Next run @ 12:05PM EST. February 22 2010).
 
 h2. Using Nozzle
 
@@ -132,7 +136,19 @@ And there you have it. You can save the stauses to a database, check the occuren
 
 Have fun.
 
+h3. Downloading and Istallation
 
-h2. Participate
+Nozzle is on "Leiningen":http://github.com/technomancy/leiningen/
+
+h3. Requirements
+
+* "clojure":http://clojure.org (version 1.1.0-master-SNAPSHOT)
+* "clojure-contrib":http://code.google.com/p/clojure-contrib/ (version 1.0-SNAPSHOT)
+
+h3. Todos
+
+* Tests!
+
+h3. Participate
 
 Please participate by reporting a bug, suggesting a feature, or contributing code. With your help, Nozzle can be made even better!
