@@ -1,0 +1,16 @@
+# emacs + vi backup files
+*~
+.*.sw*
+.#*
+\#*
+
+# build artifacts
+*.jar
+build
+target
+lib
+classes
+autodoc
+
+# clojars
+*clojars.org
