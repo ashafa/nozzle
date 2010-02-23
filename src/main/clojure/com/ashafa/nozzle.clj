@@ -90,7 +90,7 @@
   (let [nozzle        (@nozzles nozzle-id)
         stream-method (nozzle :stream-method)
         method        (if (= stream-method "filter") "POST" "GET")
-        query-string  (map-to-query-string (nozzle :parameters))
+        query-string  (map-to-query-string (nozzle :parameters-map))
         url           (str "http://stream.twitter.com/" twitter-api-version "/statuses/" stream-method ".json" 
                            (when (= method "GET") (str "?" query-string)))
         body          (if (= method "POST") query-string)]
@@ -109,9 +109,9 @@
     (sleep-update-fn sleep)))
 
 (defn- hose-check
-  "Everytime a connection (hose) changes its status, this function is run. Only when the connectrion status is  '::closing', 
-   closes the nozzle if it was intentionally closed, or tries to reconnect to twitter (following twitter's streaming api
-   guidelines on reconnecting) if a network or an HTTP error occurs."
+  "Everytime a connection (hose) changes its status, this function is run. Only when the connection status is 'closing', 
+   closes the nozzle if it was intentionally closed, or tries to reconnect to twitter (following the twitter streaming api
+   guidelines on reconnecting) if a network/HTTP error occurs."
   [nozzle-id hose old-state new-state]
   (let [nozzle                     (@nozzles nozzle-id)
         other-hose                 (nozzle (switch (new-state :hose-id) :hose-1 :hose-2))
@@ -150,15 +150,15 @@
 ;; api...
 
 (defn create-nozzle
-  "Create a new nozzle with valid twitter credentials (twitter username is used as the nozzle id)."
+  "Create a new nozzle with a twitter screen name and password  (the twitter screen name is used as the nozzle id)."
   ([stream-method username password nozzle-callback]
      (create-nozzle stream-method username password nozzle-callback nil))
-  ([stream-method username password nozzle-callback parameters]
+  ([stream-method username password nozzle-callback parameters-map]
      {:pre [(not (contains? @nozzles username))]}
      (dosync
       (alter nozzles assoc username
              {:stream-method   stream-method
-              :parameters      parameters
+              :parameters-map  parameters-map
               :username        username
               :password        password
               :active-hose-id  :hose-1
@@ -201,19 +201,20 @@
                                                (int (/ (- (@hose :wake) (.getTime (java.util.Date.))) 1000)) "s.")
                                           (h/done? agnt)
                                           "Stream closed." :else "Streaming!")]
-      {:message       message
-       :nozzle-id     nozzle-id
-       :stream-method (nozzle :stream-method)
-       :parameters    (nozzle :parameters)
-       :status        status})))
+      {:message        message
+       :nozzle-id      nozzle-id
+       :stream-method  (nozzle :stream-method)
+       :parameters-map (nozzle :parameters-map)
+       :status         status})))
 
 (defn update-nozzle
   "Update the streaming method or method parameters. A new connection (hose) with the new parameters to the streaming
-   api is initiated and the old connection is only dropped after the new connection has connected successfully."
-  ([nozzle-id parameters]
+   api is initiated and the old connection is only dropped after the new connection with the new parameters has
+   connected successfully."
+  ([nozzle-id parameters-map]
      (if-let [nozzle (@nozzles nozzle-id)]
-       (update-nozzle nozzle-id parameters (nozzle :stream-method))))
-  ([nozzle-id parameters stream-method]
+       (update-nozzle nozzle-id parameters-map (nozzle :stream-method))))
+  ([nozzle-id parameters-map stream-method]
      (if-let [nozzle (@nozzles nozzle-id)]
        (let [active-hose-id (nozzle :active-hose-id)
              hose           (nozzle active-hose-id)
@@ -223,7 +224,7 @@
          (cond (= status ::opened)
                (dosync
                 (alter nozzles assoc-in [nozzle-id :stream-method] stream-method)
-                (alter nozzles assoc-in [nozzle-id :parameters] parameters)
+                (alter nozzles assoc-in [nozzle-id :parameters-map] parameters-map)
                 (send hose assoc :status ::changing)
                 (spawn-hose other-hose-id nozzle-id nil))
                (and (#{::changing ::opening} status)
@@ -231,12 +232,12 @@
                (throw (IllegalStateException. "Can't update nozzle parameters at this time. Please try again later."))
                :else (dosync
                       (alter nozzles assoc-in [nozzle-id :stream-method] stream-method)
-                      (alter nozzles assoc-in [nozzle-id :parameters] parameters)))
+                      (alter nozzles assoc-in [nozzle-id :parameters-map] parameters-map)))
          (assoc (get-nozzle-status nozzle-id) :message "Updated nozzle parameters.")))))
   
 (defn change-nozzle-password
-  "Change the password of a nozzle. The password can only be changed if a nozzle is either '::closing' (also the state 
-   during a 401 HTTP Authorization or any error) or '::closed'."
+  "Change the password of a nozzle. The password can only be changed if a nozzle connection is either 'closing' (also the state 
+   during a 401 HTTP Authorization or any error) or 'closed'."
   [nozzle-id new-password]
   (if-let [nozzle (@nozzles nozzle-id)]
     (do

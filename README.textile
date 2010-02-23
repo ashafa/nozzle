@@ -132,7 +132,7 @@ And there you have it. You can save the stauses to a database, check the occuren
 
 Have fun.
 
-h3. Downloading and Istallation
+h3. Download and Installation
 
 Nozzle is on "Leiningen":http://github.com/technomancy/leiningen/
 
