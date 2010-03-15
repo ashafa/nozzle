@@ -40,7 +40,6 @@ It is more fun to use Nozzle interactively in your REPL. Start by creating a noz
 
 <pre>
 nozzle-example> (nozzle/create-nozzle "filter" "nozzle_tester" "AwRoNgPaSsWoRd" println {:track "love"})
-...
 {:nozzle-id "nozzle_tester", :stream-method "filter"}
 </pre>
 
@@ -48,15 +47,13 @@ Yay! That was easy. The function 'create-nozzle' takes five arguments (the fifth
 
 <pre>
 nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-...
 {:message "Error opening stream (401 - Unauthorized). Retrying in 9s.", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "love"}, :status :com.ashafa.nozzle/closing}
 </pre>
 
 Ah, we provided a wrong password when we first created the nozzle. Nozzle will wait for 10 seconds and then try connecting again with the same credentials. The wait time will be exponentially longer after every unsuccessful attempt to reconnect to the streaming API. To fix this nozzle lets change the nozzle password ...
 
 <pre>
-nozzle-example> (nozzle/change-nozzle-password "nozzle_tester" "tHeCoRrEcTpAsSwOrD")
-...
+nozzle-example> (nozzle/update-nozzle-password "nozzle_tester" "tHeCoRrEcTpAsSwOrD")
 {:message "Changed nozzle password.", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "love"}, :status :com.ashafa.nozzle/closing}
 </pre>
 
@@ -64,51 +61,43 @@ Check the nozzle status again...
 
 <pre>
 nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-...
 {:message "Streaming!", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "love"}, :status :com.ashafa.nozzle/opened}
 </pre>
 
 Your output buffer should now be overflowing with tons of status messages containging the word 'love'. Now let's track something else, the word 'hate' ...
 
 <pre>
-nozzle-example> (nozzle/update-nozzle "nozzle_tester" {:track "love,hate"})
-...
+nozzle-example> (nozzle/update-nozzle-stream "nozzle_tester" {:track "love,hate"})
 {:message "Updated nozzle parameters.", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "love,hate"}, :status :com.ashafa.nozzle/changing}
 
 nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-...
 {:message "Streaming!", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "love,hate"}, :status :com.ashafa.nozzle/opened}
 </pre>
 
 Since the words 'love' or 'hate' occur a lot in the twittersphere at any given time, the change to the stream is instantaneous. Now to try a word that doesn't have such a high rate of occurrence ...
 
 <pre>
-nozzle-example> (nozzle/update-nozzle "nozzle_tester" {:track "mbta"})
-...
+nozzle-example> (nozzle/update-nozzle-stream "nozzle_tester" {:track "mbta"})
 {:message "Updated nozzle parameters.", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "mbta"}, :status :com.ashafa.nozzle/changing}
 
 nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-...
 {:message "Streaming with previous parameters. Changing stream...", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "mbta"}, :status :com.ashafa.nozzle/changing}
 </pre>
 
 The nozzle will continue to stream with the pervious parameters and wait until we are succesfully streaming with the new parameters before closing the stream with the old parameters. We can also change the stream method of the nozzle ...
 
 <pre>
-nozzle-example> (nozzle/update-nozzle "nozzle_tester" {:track "mbta"} "sample") ;; use the sample method
-...
+nozzle-example> (nozzle/update-nozzle-stream "nozzle_tester" {:track "mbta"} "sample") ;; use the sample method
 {:message "Updated nozzle parameters.", :nozzle-id "nozzle_tester", :stream-method "sample", :parameters {:track "mbta"}, :status :com.ashafa.nozzle/changing}
 
 nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-...
 {:message "Streaming with previous parameters. Error changing stream (406 - Not Acceptable). Retrying in 6s.", :nozzle-id "nozzle_tester", :stream-method "sample", :parameters {:track "mbta"}, :status :com.ashafa.nozzle/changing}
 </pre>
 
 Oops, something went wrong. This is because the streaming method 'sample' does not accept the query parameter 'track', so the nozzle continues to stream with the previous parameters and retries changing the stream after a while (backing off exponentially). To fix this, update the nozzle to have no query parameters like so ...
 
 <pre>
-nozzle-example> (nozzle/update-nozzle "nozzle_tester" {})
-...
+nozzle-example> (nozzle/update-nozzle-stream "nozzle_tester" {})
 {:message "Updated nozzle parameters.", :nozzle-id "nozzle_tester", :stream-method "sample", :parameters {}, :status :com.ashafa.nozzle/changing}
 </pre>
 
@@ -116,15 +105,12 @@ The next time the nozzle retries changing the stream, it should succeed. When do
 
 <pre>
 nozzle-example> (nozzle/close-nozzle "nozzle_tester")
-...
 {:message "Turning nozzle off.", :nozzle-id "nozzle_tester", :stream-method "sample", :parameters {}, :status :com.ashafa.nozzle/opened}
 
 nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-...
 {:message "Closing stream...", :nozzle-id "nozzle_tester", :stream-method "sample", :parameters {}, :status :com.ashafa.nozzle/closing}
 
 nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-...
 {:message "Stream closed.", :nozzle-id "nozzle_tester", :stream-method "sample", :parameters {}, :status :com.ashafa.nozzle/closed}
 </pre>
 
@@ -134,16 +120,17 @@ Have fun.
 
 h3. Download and Installation
 
-Nozzle is on "Leiningen":http://github.com/technomancy/leiningen/
+You could clone this project or use "Leiningen":http://github.com/technomancy/leiningen/ by adding
 
-h3. Requirements
+<pre>[com.ashafa/nozzle "1.0.0-SNAPSHOT"]</pre>
 
-* "clojure":http://clojure.org (version 1.1.0-master-SNAPSHOT)
-* "clojure-contrib":http://code.google.com/p/clojure-contrib/ (version 1.0-SNAPSHOT)
+... to dependencies of your project.clj file. 
 
 h3. Todos
 
-* Tests!
+* Figure out how to go about writing tests.
+* API could use some more love.
+* pprint the API responses.
 
 h3. Participate
 

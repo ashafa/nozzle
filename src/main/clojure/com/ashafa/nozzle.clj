@@ -46,7 +46,7 @@
   [s]
   (.. URLEncoder (encode s) (replace "+" "%20")))
 
-(defn- switch
+(defn- toggle
   "Takes 3 arguments and returns the third argument if the first and second argument are equal, else returns the second
    argument."
   [current-option first-option second-option]
@@ -61,7 +61,7 @@
      (fn [q kw]
        (let [k (if (keyword? kw) (name kw) kw)
              v (str (m kw))
-             a (when (not= (last kws) kw) "&")]
+             a (if(not= (last kws) kw) "&")]
          (str q (url-encode k) "=" (url-encode v) a))) "" kws)))
 
 (defn- http-agent-handler
@@ -71,7 +71,7 @@
   (if (h/success? agnt)
     (let [nozzle        (@nozzles nozzle-id)
           hose          (nozzle hose-id)
-          other-hose-id (switch hose-id :hose-1 :hose-2)
+          other-hose-id (toggle hose-id :hose-1 :hose-2)
           other-hose    (nozzle other-hose-id)]
       (send hose assoc :sleep nil)
       (future (send hose assoc :status ::opened)
@@ -81,7 +81,10 @@
       (loop [lines (io/read-lines (h/stream agnt))]
         (when (and (not (empty? lines))
                    (= (:master-valve (@nozzles nozzle-id)) (@hose :valve) ::open))
-          (future ((nozzle :nozzle-callback) (first lines)))
+          (future (try
+                   (((@nozzles nozzle-id) :nozzle-callback) (first lines))
+                   (catch Exception e
+                     (dosync (alter nozzles assoc-in [nozzle-id :callback-error] e)))))
           (recur (rest lines)))))))
 
 (defn- get-http-agent
@@ -92,7 +95,7 @@
         method        (if (= stream-method "filter") "POST" "GET")
         query-string  (map-to-query-string (nozzle :parameters-map))
         url           (str "http://stream.twitter.com/" twitter-api-version "/statuses/" stream-method ".json" 
-                           (when (= method "GET") (str "?" query-string)))
+                           (if (= method "GET") (str "?" query-string)))
         body          (if (= method "POST") query-string)]
     (h/http-agent url
                   :method  method
@@ -101,8 +104,8 @@
                   :handler (partial http-agent-handler nozzle-id hose-id))))
 
 (defn- sleep-for
-  "Causes the current thread to sleep and returns the length of the next sleep duration of the nozzle if an error 
-   occurs during the new connection."
+  "Causes the current thread to sleep before creating a new connection, when used with the 'spawn-nozzle' fn, and 
+   returns the length of the next sleep duration of the nozzle if an error occurs during the new connection."
   [current-sleep sleep-update-fn initial-sleep maximum-sleep]
   (let [sleep (min (or current-sleep initial-sleep) maximum-sleep)]
     (Thread/sleep sleep)
@@ -114,7 +117,7 @@
    guidelines on reconnecting) if a network/HTTP error occurs."
   [nozzle-id hose old-state new-state]
   (let [nozzle                     (@nozzles nozzle-id)
-        other-hose                 (nozzle (switch (new-state :hose-id) :hose-1 :hose-2))
+        other-hose                 (nozzle (toggle (new-state :hose-id) :hose-1 :hose-2))
         valve                      (new-state :valve)
         [other-status other-valve] (if other-hose [(@other-hose :status) (@other-hose :valve)])]
     (if (= (new-state :status) ::closing)
@@ -154,7 +157,7 @@
   ([stream-method username password nozzle-callback]
      (create-nozzle stream-method username password nozzle-callback nil))
   ([stream-method username password nozzle-callback parameters-map]
-     {:pre [(not (contains? @nozzles username))]}
+     {:pre [(and (not (contains? @nozzles username)) (fn? nozzle-callback))]}
      (dosync
       (alter nozzles assoc username
              {:stream-method   stream-method
@@ -173,7 +176,7 @@
   (if-let [nozzle (@nozzles nozzle-id)]
     (let [active-hose-id            (nozzle :active-hose-id)
           hose                      (nozzle active-hose-id)
-          other-hose-id             (switch active-hose-id :hose-1 :hose-2)
+          other-hose-id             (toggle active-hose-id :hose-1 :hose-2)
           other-hose                (nozzle other-hose-id)
           master-valve              (nozzle :master-valve)
           status                    (@hose :status)
@@ -207,18 +210,18 @@
        :parameters-map (nozzle :parameters-map)
        :status         status})))
 
-(defn update-nozzle
+(defn update-nozzle-stream
   "Update the streaming method or method parameters. A new connection (hose) with the new parameters to the streaming
    api is initiated and the old connection is only dropped after the new connection with the new parameters has
    connected successfully."
   ([nozzle-id parameters-map]
      (if-let [nozzle (@nozzles nozzle-id)]
-       (update-nozzle nozzle-id parameters-map (nozzle :stream-method))))
+       (update-nozzle-stream nozzle-id parameters-map (nozzle :stream-method))))
   ([nozzle-id parameters-map stream-method]
      (if-let [nozzle (@nozzles nozzle-id)]
        (let [active-hose-id (nozzle :active-hose-id)
              hose           (nozzle active-hose-id)
-             other-hose-id  (switch active-hose-id :hose-1 :hose-2)
+             other-hose-id  (toggle active-hose-id :hose-1 :hose-2)
              other-hose     (nozzle other-hose-id)
              status         (@hose :status)]
          (cond (= status ::opened)
@@ -235,16 +238,24 @@
                       (alter nozzles assoc-in [nozzle-id :parameters-map] parameters-map)))
          (assoc (get-nozzle-status nozzle-id) :message "Updated nozzle parameters.")))))
   
-(defn change-nozzle-password
-  "Change the password of a nozzle. The password can only be changed if a nozzle connection is either 'closing' (also the state 
-   during a 401 HTTP Authorization or any error) or 'closed'."
-  [nozzle-id new-password]
+(defn update-nozzle-password
+  "Changes the password of a nozzle. The password can only be changed if a nozzle connection is either 'closing' (also the state 
+   during an HTTP error) or 'closed'."
+  [nozzle-id password]
   (if-let [nozzle (@nozzles nozzle-id)]
     (do
       (if (#{::closing ::closed} (@(nozzle (nozzle :active-hose-id)) :status))
-        (dosync (alter nozzles assoc-in [nozzle-id :password] new-password))
+        (dosync (alter nozzles assoc-in [nozzle-id :password] password))
         (throw (IllegalStateException. "Can't change nozzle password at the time. Please try again later.")))
       (assoc (get-nozzle-status nozzle-id) :message "Changed nozzle password."))))
+
+(defn update-nozzle-callback
+  "Changes the callback of a nozzle."
+  [nozzle-id callback]
+  {:pre [(fn? callback)]}
+  (when (@nozzles nozzle-id)
+    (dosync (alter nozzles assoc-in [nozzle-id :nozzle-callback] callback))
+    (assoc (get-nozzle-status nozzle-id) :message "Changed nozzle callback.")))
   
 (defn open-nozzle
   "Opens a closed nozzle."
