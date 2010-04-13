@@ -65,7 +65,8 @@
          (str q (url-encode k) "=" (url-encode v) a))) "" kws)))
 
 (defn- http-agent-handler
-  "HTTP agent handler."
+  "HTTP agent handler. Runs the nozzle callback, with each line from the stream as the single argument, in a different
+   thread."
   [nozzle-id hose-id agnt]
   (send ((@nozzles nozzle-id) hose-id) assoc :status ::closing)
   (if (h/success? agnt)
@@ -112,9 +113,9 @@
     (sleep-update-fn sleep)))
 
 (defn- hose-check
-  "Everytime a connection (hose) changes its status, this function is run. Only when the connection status is 'closing', 
-   closes the nozzle if it was intentionally closed, or tries to reconnect to twitter (following the twitter streaming api
-   guidelines on reconnecting) if a network/HTTP error occurs."
+  "Everytime a connection (hose) changes its status, this function is run. Only when the connection status is 'closing' 
+   this function closes the nozzle if it was intentionally closed, or it tries to reconnect to the twitter stream 
+   (following the twitter streaming api guidelines on reconnecting) if a network/HTTP error occurs."
   [nozzle-id hose old-state new-state]
   (let [nozzle                     (@nozzles nozzle-id)
         other-hose                 (nozzle (toggle (new-state :hose-id) :hose-1 :hose-2))
@@ -128,8 +129,7 @@
             (let [sleep-signature (if (h/error? (new-state :http-agent))
                                     [(partial * 2) 10000 240000]
                                     [(partial + 250) 0 16000])]
-              (spawn-hose (new-state :hose-id) nozzle-id
-                            (apply sleep-for (new-state :sleep) sleep-signature)))
+              (spawn-hose (new-state :hose-id) nozzle-id (apply sleep-for (new-state :sleep) sleep-signature)))
             (= other-valve valve ::open)
             (send hose assoc :status ::changing)
             :else (send hose assoc :status ::closed)))))

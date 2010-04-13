@@ -122,7 +122,7 @@ h3. Download and Installation
 
 You could clone this project or use "Leiningen":http://github.com/technomancy/leiningen/ by adding
 
-<pre>[com.ashafa/nozzle "1.0.0-SNAPSHOT"]</pre>
+<pre>[com.ashafa/nozzle "0.1.0-SNAPSHOT"]</pre>
 
 ... to dependencies of your project.clj file. 
 
