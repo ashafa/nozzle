@@ -1,137 +1,26 @@
 h1. Nozzle
 
-<pre>
- (ns nozzle-example
-  (:require [com.ashafa.nozzle :as nozzle]
-            [com.ashafa.clutch :as clutch]
-            [clojure.contrib.json.read :as json]))
+Nozzle is a "Clojure":http://clojure.org library for streaming tweets from the "Twitter Streaming API":http://apiwiki.twitter.com/Streaming-API-Documentation . Nozzle abides to the guidelines for connecting/reconnecting to the streaming api on HTTP/Network errors, or intentionally disconnecting/reconnecting/updating streams. Nozzle is also capable of changing methods and query parameters while streaming with practically no loss of data.
 
-
-(def auth {:id "screen_name" :pass "password"}) ;; provide a valid twitter screen name and password
-
-(defn get-db
-  [db-name]
-     (if (clutch/database-info db-name)
-       db-name
-       (clutch/create-database {:name db-name :language "clojure"})))
-
-(def tweets-db (get-clutch-db "tweets_db"))
-
-(defn save-to-couchdb
-  [json-str]
-  (when json-str
-    (let [data (binding [json/*json-keyword-keys* true] (json/read-json json-str))]
-      (if-let [id (data :id)]
-        (clutch/with-db tweets-db (clutch/create-document {:text (data :text)} id))))))
-
-(defn start
-  []
-  (if (nozzle/get-nozzle-status (auth :id))
-    (nozzle/open-nozzle (auth :id))
-    (nozzle/create-nozzle "filter" (auth :id) (auth :pass) save-to-couchdb {:track "love,hate"})))
-
-</pre>
-
-Nozzle is a "Clojure":http://clojure.org library for streaming statuses from the "Twitter Streaming API":http://apiwiki.twitter.com/Streaming-API-Documentation . Nozzle tries to abide by the guidelines for connecting/reconnecting to the streaming api on HTTP/Network error, or intentionally disconnecting and reconnecting. Nozzle is also capable of changing methods and query parameters while streaming with practically no loss of data.
-
-h2. Using Nozzle
-
-It is more fun to use Nozzle interactively in your REPL. Start by creating a nozzle to track the word 'love' and print the resulting data to \*out\*:
-
-<pre>
-nozzle-example> (nozzle/create-nozzle "filter" "nozzle_tester" "AwRoNgPaSsWoRd" println {:track "love"})
-{:nozzle-id "nozzle_tester", :stream-method "filter"}
-</pre>
-
-Yay! That was easy. The function 'create-nozzle' takes five arguments (the fifth argument is optional). The arguments are (i) the "method":http://apiwiki.twitter.com/Streaming-API-Documentation#Methods you wish to connect to the streaming api, (ii) a valid screen name of a twitter user, (iii) the password for that user, (iv) a callback function that takes one argument which is a line of data (status, notice, or newline character) as it is read from the connection, (v) and an optional map which translates to the query parameters for the connection method, respectively. It then returns a map containing the nozzle id (which is the same as the twitter screen name used for the connection) and the stream method of the connection. Now check your \*out\* buffer to view the statuses streaming from the twittersphere... Hmm?!? no statuses are showing up! Let's check the status of our nozzle ...
-
-<pre>
-nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-{:message "Error opening stream (401 - Unauthorized). Retrying in 9s.", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "love"}, :status :com.ashafa.nozzle/closing}
-</pre>
-
-Ah, we provided a wrong password when we first created the nozzle. Nozzle will wait for 10 seconds and then try connecting again with the same credentials. The wait time will be exponentially longer after every unsuccessful attempt to reconnect to the streaming API. To fix this nozzle lets change the nozzle password ...
-
-<pre>
-nozzle-example> (nozzle/update-nozzle-password "nozzle_tester" "tHeCoRrEcTpAsSwOrD")
-{:message "Changed nozzle password.", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "love"}, :status :com.ashafa.nozzle/closing}
-</pre>
-
-Check the nozzle status again...
-
-<pre>
-nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-{:message "Streaming!", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "love"}, :status :com.ashafa.nozzle/opened}
-</pre>
-
-Your output buffer should now be overflowing with tons of status messages containging the word 'love'. Now let's track something else, the word 'hate' ...
-
-<pre>
-nozzle-example> (nozzle/update-nozzle-stream "nozzle_tester" {:track "love,hate"})
-{:message "Updated nozzle parameters.", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "love,hate"}, :status :com.ashafa.nozzle/changing}
-
-nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-{:message "Streaming!", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "love,hate"}, :status :com.ashafa.nozzle/opened}
-</pre>
-
-Since the words 'love' or 'hate' occur a lot in the twittersphere at any given time, the change to the stream is instantaneous. Now to try a word that doesn't have such a high rate of occurrence ...
-
-<pre>
-nozzle-example> (nozzle/update-nozzle-stream "nozzle_tester" {:track "mbta"})
-{:message "Updated nozzle parameters.", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "mbta"}, :status :com.ashafa.nozzle/changing}
-
-nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-{:message "Streaming with previous parameters. Changing stream...", :nozzle-id "nozzle_tester", :stream-method "filter", :parameters {:track "mbta"}, :status :com.ashafa.nozzle/changing}
-</pre>
-
-The nozzle will continue to stream with the pervious parameters and wait until we are succesfully streaming with the new parameters before closing the stream with the old parameters. We can also change the stream method of the nozzle ...
-
-<pre>
-nozzle-example> (nozzle/update-nozzle-stream "nozzle_tester" {:track "mbta"} "sample") ;; use the sample method
-{:message "Updated nozzle parameters.", :nozzle-id "nozzle_tester", :stream-method "sample", :parameters {:track "mbta"}, :status :com.ashafa.nozzle/changing}
-
-nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-{:message "Streaming with previous parameters. Error changing stream (406 - Not Acceptable). Retrying in 6s.", :nozzle-id "nozzle_tester", :stream-method "sample", :parameters {:track "mbta"}, :status :com.ashafa.nozzle/changing}
-</pre>
-
-Oops, something went wrong. This is because the streaming method 'sample' does not accept the query parameter 'track', so the nozzle continues to stream with the previous parameters and retries changing the stream after a while (backing off exponentially). To fix this, update the nozzle to have no query parameters like so ...
-
-<pre>
-nozzle-example> (nozzle/update-nozzle-stream "nozzle_tester" {})
-{:message "Updated nozzle parameters.", :nozzle-id "nozzle_tester", :stream-method "sample", :parameters {}, :status :com.ashafa.nozzle/changing}
-</pre>
-
-The next time the nozzle retries changing the stream, it should succeed. When done with the stream you can close the stream by calling the function 'close-nozzle' ...
-
-<pre>
-nozzle-example> (nozzle/close-nozzle "nozzle_tester")
-{:message "Turning nozzle off.", :nozzle-id "nozzle_tester", :stream-method "sample", :parameters {}, :status :com.ashafa.nozzle/opened}
-
-nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-{:message "Closing stream...", :nozzle-id "nozzle_tester", :stream-method "sample", :parameters {}, :status :com.ashafa.nozzle/closing}
-
-nozzle-example> (nozzle/get-nozzle-status "nozzle_tester")
-{:message "Stream closed.", :nozzle-id "nozzle_tester", :stream-method "sample", :parameters {}, :status :com.ashafa.nozzle/closed}
-</pre>
-
-And there you have it. You can save the stauses to a database, check the occurence rate of a words you are tracking, or run all kinds of analysis on the results you get from the streaming API because you now have the power of Clojure, all in real time. 
+For documentation, please view the "API":http://ashafa.com/nozzle. It should be pretty straightforward, but if you are having any issues don't hesitate to drop me a line.
 
 Have fun.
 
 h3. Download and Installation
 
-You could clone this project or use "Leiningen":http://github.com/technomancy/leiningen/ by adding
+Nozzle uses "Leiningen":http://github.com/technomancy/leiningen/.
 
-<pre>[com.ashafa/nozzle "0.1.0-SNAPSHOT"]</pre>
+Install by adding ...
+
+<pre>[com.ashafa/nozzle "0.2.0"]</pre>
 
 ... to dependencies of your project.clj file. 
 
 h3. Todos
 
-* Figure out how to go about writing tests.
-* API could use some more love.
-* pprint the API responses.
+* _Maybe_ write some tests.
+* API could use some love.
 
 h3. Participate
 
-Please participate by reporting a bug, suggesting a feature, or contributing code. With your help, Nozzle can be made even better!
+Please participate by reporting any bugs, suggesting a feature, or contributing code. With your help, Nozzle can be made even better.
