@@ -77,7 +77,7 @@
              (send previous-hose assoc :valve ::close))
            (send this-hose assoc :status ::opened)
            (send this-hose assoc :next-sleep 0)
-           (alter nozzles assoc nozzle-id 
+       (alter nozzles assoc nozzle-id
                   (merge nozzle 
                          {:message "Streaming."
                           :active-spawn-time spawn-time
@@ -205,22 +205,22 @@
   ([]
      (pprint @nozzles))
   ([nozzle-id]
-     (let [nozzle     (@nozzles nozzle-id)
-           parameters (nozzle :parameters-map)
-           wake       (and (nozzle :latest-spawn-time) (nozzle :sleep))
-           status     {:status (nozzle :message)}
-           status-w-p (if parameters 
-                        (assoc status :parameters parameters))
-           status-w-w (if wake
-                        (assoc (or status-w-p status) :retrying-in
-                               (str "~ " 
-                                    (int (/ (- (+ (nozzle :latest-spawn-time)
-                                                  (nozzle :sleep))
-                                               (.getTime (java.util.Date.)))
-                                            1000))
-                                    "s")))]
-       (or status-w-w status-w-p status))))
-
+     (if-let [nozzle (@nozzles nozzle-id)]
+       (let [parameters (nozzle :parameters-map)
+             wake       (and (nozzle :latest-spawn-time) (nozzle :sleep))
+             status     {:status (nozzle :message)}
+             status-w-p (if parameters 
+                          (assoc status :parameters parameters))
+             status-w-w (if wake
+                          (assoc (or status-w-p status) :retrying-in
+                                 (str "~ " 
+                                      (int (/ (- (+ (nozzle :latest-spawn-time)
+                                                    (nozzle :sleep))
+                                                 (.getTime (java.util.Date.)))
+                                              1000))
+                                      "s")))]
+         (or status-w-w status-w-p status)))))
+  
 
 (defn update-password
   "Changes the password of a nozzle."
@@ -233,8 +233,7 @@
 
 (defn update-stream
   "Update the streaming method or method parameters. A new connection (hose) with the new parameters to the streaming
-   api is initiated and the old connection is only dropped after the new connection with the new parameters has
-   connected successfully."
+   api is initiated and the old connection is only dropped after the new connection has connected successfully."
   ([nozzle-id parameters-map]
      {:pre [(@nozzles nozzle-id)]}
      (update-stream nozzle-id parameters-map ((@nozzles nozzle-id) :stream-method)))

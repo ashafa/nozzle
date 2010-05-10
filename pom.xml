@@ -9,7 +9,7 @@
   <scm>
     <connection>scm:git:git://github.com/tashafa/nozzle.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/tashafa/nozzle.git</developerConnection>
-    <tag>99ce6eeb381c8741bcbead75dc7be4bb6c89080a</tag>
+    <tag>493a60102f7a0a7faeaba9244f37059c74b567a2</tag>
     <url>http://github.com/tashafa/nozzle</url>
   </scm>
   <repositories>
