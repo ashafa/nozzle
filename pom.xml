@@ -3,13 +3,13 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.ashafa</groupId>
   <artifactId>nozzle</artifactId>
-  <version>0.2.0</version>
+  <version>0.2.1</version>
   <name>nozzle</name>
   <description>A Clojure library for streaming tweets from the Twitter Streaming API.</description>
   <scm>
     <connection>scm:git:git://github.com/tashafa/nozzle.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/tashafa/nozzle.git</developerConnection>
-    <tag>493a60102f7a0a7faeaba9244f37059c74b567a2</tag>
+    <tag>7de94bc1586d67589e8788ea1ba46addb2c4c4e9</tag>
     <url>http://github.com/tashafa/nozzle</url>
   </scm>
   <repositories>

@@ -1,4 +1,4 @@
-(defproject com.ashafa/nozzle "0.2.0" 
+(defproject com.ashafa/nozzle "0.2.1" 
   :description "A Clojure library for streaming tweets from the Twitter Streaming API." 
   :dependencies [[org.clojure/clojure "1.1.0-master-SNAPSHOT"]
                  [org.clojure/clojure-contrib "1.0-SNAPSHOT"]

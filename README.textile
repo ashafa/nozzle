@@ -12,7 +12,7 @@ Nozzle uses "Leiningen":http://github.com/technomancy/leiningen/.
 
 Install by adding ...
 
-<pre>[com.ashafa/nozzle "0.2.0"]</pre>
+<pre>[com.ashafa/nozzle "0.2.1"]</pre>
 
 ... to dependencies of your project.clj file. 
 

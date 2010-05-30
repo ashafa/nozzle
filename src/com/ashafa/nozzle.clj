@@ -83,7 +83,7 @@
                           :active-spawn-time spawn-time
                           :spawning (not (= spawn-time (nozzle :latest-spawn-time)))}))))
         (loop [lines (io/read-lines (h/stream agnt))]
-          (when (and (not (empty? lines))
+          (when (and (not-empty lines)
                      (= (:master-valve (@nozzles nozzle-id)) (@((@nozzles nozzle-id) spawn-time) :valve) ::open))
             (future (try
                      (((@nozzles nozzle-id) :nozzle-callback) (first lines))
