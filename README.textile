@@ -12,7 +12,7 @@ h1. Nozzle
    [message] 
    (println message))
 
-(def noz (com.ashafa.nozzle/create-nozzle "filter" username passwd my-callback))
+(def noz (create-nozzle "filter" username passwd my-callback))
 
 </pre>
 
