@@ -1,5 +1,21 @@
 h1. Nozzle
 
+
+<code>
+
+(use 'com.ashafa.nozzle)
+
+(def username (System/getenv "TWITTER_ACCOUNT"))
+(def passwd   (System/getenv "TWITTER_PASSWD"))
+
+(defn my-callback 
+   [message] 
+   (println message))
+
+(def noz (com.ashafa.nozzle/create-nozzle "filter" username passwd my-callback))
+
+</code>
+
 Nozzle is a "Clojure":http://clojure.org library for streaming tweets from the "Twitter Streaming API":http://apiwiki.twitter.com/Streaming-API-Documentation . Nozzle abides to the guidelines for connecting/reconnecting to the streaming api on HTTP/Network errors, or intentionally disconnecting/reconnecting/updating streams. Nozzle is also capable of changing methods and query parameters while streaming with practically no loss of data.
 
 For documentation, please view the "API":http://ashafa.com/nozzle. It should be pretty straightforward, but if you are having any issues don't hesitate to drop me a line.
@@ -18,7 +34,6 @@ Install by adding ...
 
 h3. Todos
 
-* _Maybe_ write some tests.
 * API could use some love.
 
 h3. Participate
