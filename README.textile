@@ -1,7 +1,7 @@
 h1. Nozzle
 
 
-<code>
+<pre>
 
 (use 'com.ashafa.nozzle)
 
@@ -14,7 +14,7 @@ h1. Nozzle
 
 (def noz (com.ashafa.nozzle/create-nozzle "filter" username passwd my-callback))
 
-</code>
+</pre>
 
 Nozzle is a "Clojure":http://clojure.org library for streaming tweets from the "Twitter Streaming API":http://apiwiki.twitter.com/Streaming-API-Documentation . Nozzle abides to the guidelines for connecting/reconnecting to the streaming api on HTTP/Network errors, or intentionally disconnecting/reconnecting/updating streams. Nozzle is also capable of changing methods and query parameters while streaming with practically no loss of data.
 
