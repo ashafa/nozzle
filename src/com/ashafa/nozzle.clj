@@ -98,7 +98,7 @@
         stream-method (nozzle :stream-method)
         method        (if (= stream-method "filter") "POST" "GET")
         query-string  (map-to-query-string (nozzle :parameters-map))
-        url           (str "http://stream.twitter.com/" twitter-api-version "/statuses/" stream-method ".json" 
+        url           (str "https://stream.twitter.com/" twitter-api-version "/statuses/" stream-method ".json" 
                            (if (= method "GET") (str "?" query-string)))
         body          (if (= method "POST") query-string)]
     (h/http-agent url
